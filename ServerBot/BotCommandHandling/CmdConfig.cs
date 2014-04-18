@@ -45,67 +45,21 @@ namespace ServerBot
         }
     }
 
-    public class BotCommandSet
-    {
-        public List<cBotCommand> botcommands;
-        public BotCommandSet(List<cBotCommand> botcommands)
-        {
-            this.botcommands = botcommands;
-        }
-    }
-
 
     public class CmdConfig
     {
+        public List<cBotCommand> customCommands = new List<cBotCommand>();
 
-        public List<BotCommandSet> BotActions;
+        public void Write(string path)
+        {
+            File.WriteAllText(path, JsonConvert.SerializeObject(this, Formatting.Indented));
+        }
 
         public static CmdConfig Read(string path)
         {
             if (!File.Exists(path))
                 return new CmdConfig();
-            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                return Read(fs);
-            }
+            return JsonConvert.DeserializeObject<CmdConfig>(File.ReadAllText(path));
         }
-
-        public static CmdConfig Read(Stream stream)
-        {
-            using (var sr = new StreamReader(stream))
-            {
-                var cf = JsonConvert.DeserializeObject<CmdConfig>(sr.ReadToEnd());
-                if (ConfigRead != null)
-                    ConfigRead(cf);
-                return cf;
-            }
-        }
-
-        public void Write(string path)
-        {
-            using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Write))
-            {
-                Write(fs);
-            }
-        }
-
-        public void Write(Stream stream)
-        {
-
-            BotActions = new List<BotCommandSet>();
-            List<cBotCommand> commandSet = new List<cBotCommand>();
-            commandSet.Add(new cBotCommand("help", "", new List<string>() { "/help" }, false));
-            BotActions.Add(new BotCommandSet(commandSet));
-
-
-
-            var str = JsonConvert.SerializeObject(this, Formatting.Indented);
-            using (var sw = new StreamWriter(stream))
-            {
-                sw.Write(str);
-            }
-        }
-
-        public static Action<CmdConfig> ConfigRead;
     }
 }

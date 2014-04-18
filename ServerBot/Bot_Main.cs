@@ -169,14 +169,14 @@ namespace ServerBot
             */
             #endregion
 
-            if (bTools.bot_Config.bot_Join_Message != "")
+            if (bTools.botConfig.bot_Join_Message != "")
             {
                 var player = TShock.Players[args.Who];
 
                 Random r = new Random();
-                var rand = r.Next(0, bTools.bot_Config.bot_Join_Message.Split('|').Length - 1);
+                var rand = r.Next(0, bTools.botConfig.bot_Join_Message.Split('|').Length - 1);
 
-                bTools.GreetMsg(player, bTools.bot_Config.bot_Join_Message.Split('|')[rand]);
+                bTools.GreetMsg(player, bTools.botConfig.bot_Join_Message.Split('|')[rand]);
             }
         }
         #endregion
@@ -200,7 +200,7 @@ namespace ServerBot
 
             if (args.Text == "/")
             {
-                if (bTools.bot_Config.Snark)
+                if (bTools.botConfig.Snark)
                 {
                     player.SendWarningMessage("Correct. That is a command starter. Try writing an actual command now.");
                 }

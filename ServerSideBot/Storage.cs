@@ -47,5 +47,23 @@ namespace ServerSideBot
 
             return retList;
         }
+
+        public List<BPlayer> GetPlayerListByTSPlayer(TSPlayer player)
+        {
+            var retList = new List<BPlayer>();
+            foreach (var ply in players)
+            {
+                if (ply.name.ToLower() == "~^" + player.Name)
+                    return new List<BPlayer> {ply};
+                if (ply.name.ToLower() == player.UserAccountName)
+                    return new List<BPlayer> {ply};
+                if (ply.name.ToLower().Contains("~^" + player.Name.ToLower()) && !retList.Contains(ply))
+                    retList.Add(ply);
+                if (ply.name.ToLower().Contains(player.Name.ToLower()) && !retList.Contains(ply))
+                    retList.Add(ply);
+            }
+
+            return retList;
+        }
     }
 }

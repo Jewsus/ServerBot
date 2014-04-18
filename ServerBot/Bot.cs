@@ -85,7 +85,7 @@ namespace ServerBot
 
         public void doSetUp()
         {
-            rgb = bTools.bot_Config.bot_MessageRGB;
+            rgb = bTools.botConfig.bot_MessageRGB;
 
         }
     }

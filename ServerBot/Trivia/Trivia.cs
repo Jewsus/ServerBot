@@ -22,7 +22,7 @@ namespace ServerBot
 		public Trivia(bBot master) 
 		{ 
 			Master = master;
-			LoadConfig(bTools.trivia_Save_Path);
+			LoadConfig(bTools.triviaSavePath);
 			if (Enabled)
 				UnaskedQuestions.AddRange(Config.TriviaItems);
 		}

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text;
 using MySql.Data.MySqlClient;
 using TShockAPI;
 using TShockAPI.DB;
@@ -16,9 +17,9 @@ namespace ServerSideBot
             _db = db;
 
             var creator = new SqlTableCreator(db,
-                                             db.GetSqlType() == SqlType.Sqlite
-                                             ? (IQueryBuilder)new SqliteQueryCreator()
-                                             : new MysqlQueryCreator());
+                db.GetSqlType() == SqlType.Sqlite
+                    ? (IQueryBuilder) new SqliteQueryCreator()
+                    : new MysqlQueryCreator());
 
             var table = new SqlTable("IgnoreLists",
                 new SqlColumn("ID", MySqlDbType.Int32) {AutoIncrement = true, Primary = true},
@@ -32,17 +33,25 @@ namespace ServerSideBot
                 new SqlColumn("Reply", MySqlDbType.Text));
 
             creator.EnsureExists(table);
+
+            table = new SqlTable("Channels",
+                new SqlColumn("ID", MySqlDbType.Int32) {Unique = true, AutoIncrement = true, Primary = true},
+                new SqlColumn("ChannelName", MySqlDbType.VarChar) {Unique = true},
+                new SqlColumn("Owner", MySqlDbType.VarChar),
+                new SqlColumn("Modes", MySqlDbType.Text),
+                new SqlColumn("Access", MySqlDbType.Text),
+                new SqlColumn("Bans", MySqlDbType.VarChar),
+                new SqlColumn("Topic", MySqlDbType.Text),
+                new SqlColumn("UserLimit", MySqlDbType.Int32),
+                new SqlColumn("Password", MySqlDbType.Text));
+
+            creator.EnsureExists(table);
         }
 
         public bool InsertPlayer(BPlayer player)
         {
             return _db.Query("INSERT INTO IgnoreLists (Name, IgnoredUsers)"
                 + " VALUES (@0, @1)", player.name, string.Join(",", player.ignoredPlayers)) != 0;
-        }
-
-        public bool DeletePlayer(string player)
-        {
-            return _db.Query("DELETE FROM IgnoreLists WHERE Name = @0", player) != 0;
         }
 
         public bool SavePlayer(BPlayer player)
@@ -83,5 +92,80 @@ namespace ServerSideBot
                 }
             }
         }
+
+        public void InsertChannel(Channel chan)
+        {
+            var accessList = ConvertDictToString(chan.accessLevels);
+            _db.Query("INSERT INTO Channels (ChannelName, Owner, Modes, Access, Bans, Topic, UserLimit, Password)" +
+                      " VALUES (@0, @1, @2, @3, @4, @5, @6, @7)",
+                chan.name, chan.owner, chan.modes, accessList, "", chan.topic, chan.capacity, chan.password);
+        }
+
+        public void UpdateChannel(Channel chan)
+        {
+            var accessList = ConvertDictToString(chan.accessLevels);
+            var bans = string.Join(",", chan.banList);
+
+            _db.Query("UPDATE Channels SET Modes = @0, Access = @1, Bans = @2, Topic = @3, UserLimit = @4, " +
+                      "Password = @5 WHERE ChannelName = @6",
+                chan.modes, accessList, bans, chan.topic, chan.capacity, chan.password, chan.name);
+        }
+
+        public void SyncChannels()
+        {
+            using (var reader = _db.QueryReader("SELECT * FROM Channels"))
+            {
+                while (reader.Read())
+                {
+                    var name = reader.Get<string>("ChannelName");
+                    var modes = reader.Get<string>("Modes");
+                    var accessList = reader.Get<string>("Access");
+                    var bans = reader.Get<string>("Bans");
+                    var owner = reader.Get<string>("Owner");
+                    var topic = reader.Get<string>("Topic");
+                    var capacity = reader.Get<int>("UserLimit");
+                    var password = reader.Get<string>("Password");
+
+                    var access = ConvertStringToDict(accessList);
+                    var chan = new Channel
+                    {
+                        banList = bans.Split(',').ToList(),
+                        modes = modes,
+                        accessLevels = access,
+                        name = name,
+                        owner = owner,
+                        topic = topic,
+                        capacity = capacity,
+                        password = password
+                    };
+
+                    SSBot.channelManager.Channels.Add(chan);
+                }
+            }
+        }
+
+        private static string ConvertDictToString(Dictionary<string, int> dict)
+        {
+            var sb = new StringBuilder();
+            foreach (var pair in dict)
+                sb.Append(pair.Key + ":" + pair.Value);
+
+            return sb.ToString();
+        }
+
+        private static Dictionary<string, int> ConvertStringToDict(string str)
+        {
+            var dict = new Dictionary<string, int>();
+
+            var arr = str.Split(',');
+            foreach (var pair in arr.Select(s => s.Split(':')))
+            {
+                int value;
+                if (int.TryParse(pair[1], out value))
+                    dict.Add(pair[0], value);
+            }
+
+            return dict;
+        } 
     }
 }

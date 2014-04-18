@@ -83,6 +83,7 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="BPlayer.cs" />
+    <Compile Include="ChannelManager.cs" />
     <Compile Include="Commands\BuiltInCommandRegistration.cs" />
     <Compile Include="Commands\ChatHandler.cs" />
     <Compile Include="Config.cs" />

@@ -46,9 +46,9 @@ namespace ServerSideBot
         }
         public void Say(string text, params object[] args)
         {
-            TSPlayer.All.SendMessage(string.Format("<{0}>: {1}", SSBot.Config.BotName,
+            TSPlayer.All.SendMessage(string.Format("<{0}>: {1}", name,
                 string.Format(text, args)), Color);
-            TSPlayer.Server.SendMessage(string.Format("<{0}>: {1}", SSBot.Config.BotName,
+            TSPlayer.Server.SendMessage(string.Format("<{0}>: {1}", name,
                 string.Format(text, args)), Color);
             Log.Info(string.Format("Botcast: {0}", text));
         }
@@ -70,7 +70,7 @@ namespace ServerSideBot
         /// <param name="args">arguments for string.Format</param>
         public void PrivateSay(string text, TSPlayer player, params object[] args)
         {
-            player.SendMessage(string.Format("<From {0}> {1}", SSBot.Config.BotName,
+            player.SendMessage(string.Format("<From {0}> {1}", name,
                 string.Format(text, args)), Color.MediumPurple);
         }
     }

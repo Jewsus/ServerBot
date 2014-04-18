@@ -229,7 +229,7 @@ namespace ServerBot
         public static void ReloadCfg(CommandArgs args)
         {
             bTools.SetUpConfig();
-            bTools.Bot.Trivia.LoadConfig(bTools.trivia_Save_Path);
+            bTools.Bot.Trivia.LoadConfig(bTools.triviaSavePath);
 
             args.Player.SendWarningMessage("Reloaded Bot config");
         }

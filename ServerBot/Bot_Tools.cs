@@ -20,16 +20,14 @@ namespace ServerBot
 {
     public class bTools
     {
-        public static bConfig bot_Config { get; set; }
-        public static CmdConfig com_Config { get; set; }
+        public static bConfig botConfig { get; set; }
+        public static CmdConfig comConfig { get; set; }
         public WebRequest request;
-        internal static string save_Path { get { return Path.Combine(TShock.SavePath, "ServerBot/BotConfig.json"); } }
-        internal static string trivia_Save_Path { get { return Path.Combine(TShock.SavePath, "ServerBot/TriviaConfig.json"); } }
-        internal static string com_Save_Path { get { return Path.Combine(TShock.SavePath, "ServerBot/BotCommands.json"); } }
+        internal static string savePath { get { return Path.Combine(TShock.SavePath, "ServerBot/BotConfig.json"); } }
+        internal static string triviaSavePath { get { return Path.Combine(TShock.SavePath, "ServerBot/TriviaConfig.json"); } }
+        internal static string comSavPath { get { return Path.Combine(TShock.SavePath, "ServerBot/BotCommands.json"); } }
         public static bBot Bot { get; set; }
         public static List<bPlayer> players = new List<bPlayer>();
-        public static DateTime lastmsgupdate = DateTime.Now;
-        public static DateTime lastswearupdate = DateTime.Now;
         public static Random rid = new Random();
         public static string IP { get; set; }
         public static int plycount = 0;
@@ -41,11 +39,11 @@ namespace ServerBot
 
         public static void autoJoin(EventArgs args)
         {
-            if (bot_Config.enableAutoJoin)
-            {
-                Bot = new bBot(bot_Config.bot_Name);
-                Bot.doSetUp();
-            }
+            if (!botConfig.enableAutoJoin)
+                return;
+
+            Bot = new bBot(botConfig.bot_Name);
+            Bot.doSetUp();
         }
 
         #region Database
@@ -103,37 +101,37 @@ namespace ServerBot
         #region SetUpConfig
         public static void SetUpConfig()
         {
-            bTools.bot_Config = new bConfig();
-            bTools.com_Config = new CmdConfig();
+            bTools.botConfig = new bConfig();
+            bTools.comConfig = new CmdConfig();
 
             try
             {
                 if (Directory.Exists(Path.Combine(TShock.SavePath, "ServerBot")))
                 {
-                    if (File.Exists(bTools.save_Path))
+                    if (File.Exists(bTools.savePath))
                     {
-                        bTools.bot_Config = bConfig.Read(bTools.save_Path);
+                        bTools.botConfig = bConfig.Read(bTools.savePath);
                     }
                     else
                     {
-                        bTools.bot_Config.Write(bTools.save_Path);
+                        bTools.botConfig.Write(bTools.savePath);
                     }
-                    if (!File.Exists(bTools.trivia_Save_Path))
+                    if (!File.Exists(bTools.triviaSavePath))
                     {
-                        new TriviaConfig().Write(bTools.trivia_Save_Path);
+                        new TriviaConfig().Write(bTools.triviaSavePath);
                     }
 
-                    if (File.Exists(bTools.com_Save_Path))
-                        bTools.com_Config = CmdConfig.Read(bTools.com_Save_Path);
+                    if (File.Exists(bTools.comSavPath))
+                        bTools.comConfig = CmdConfig.Read(bTools.comSavPath);
                     else
-                        bTools.com_Config.Write(bTools.com_Save_Path);
+                        bTools.comConfig.Write(bTools.comSavPath);
                 }
                 else
                 {
                     Directory.CreateDirectory(Path.Combine(TShock.SavePath, "ServerBot"));
-                    bTools.bot_Config.Write(bTools.save_Path);
-                    bTools.com_Config.Write(bTools.com_Save_Path);
-                    new TriviaConfig().Write(bTools.trivia_Save_Path);
+                    bTools.botConfig.Write(bTools.savePath);
+                    bTools.comConfig.Write(bTools.comSavPath);
+                    new TriviaConfig().Write(bTools.triviaSavePath);
                 }
             }
             catch (Exception x)
@@ -146,14 +144,14 @@ namespace ServerBot
 
         public static cBotCommand getcBotCommand(string text)
         {
-            for (int i = 0; i < bTools.com_Config.BotActions.Count; i++)
-            {
-                foreach (cBotCommand c in bTools.com_Config.BotActions[i].botcommands)
-                {
-                    if (c.CommandName == text)
-                        return c;
-                }
-            }
+            //for (int i = 0; i < bTools.comConfig.customCommands.Count; i++)
+            //{
+            //    foreach (cBotCommand c in bTools.comConfig.customCommands[i].botcommands)
+            //    {
+            //        if (c.CommandName == text)
+            //            return c;
+            //    }
+            //}
             return null;
         }
 
@@ -194,7 +192,7 @@ namespace ServerBot
             #endregion
 
             #region Swearblocker
-            if (bTools.bot_Config.swear_Block)
+            if (bTools.botConfig.swear_Block)
             {
                 if (!BotCommandHandler.CheckForBotCommand(args.Text) && !args.Text.StartsWith("/"))
                 {
@@ -269,28 +267,28 @@ namespace ServerBot
             player.swear_Count++;
             var tsPlayer = TShock.Players[player.Index];
             
-            if (player.swear_Count == bot_Config.swear_Block_Chances)
+            if (player.swear_Count == botConfig.swear_Block_Chances)
             {
-                switch (bot_Config.swear_Block_Action)
+                switch (botConfig.swear_Block_Action)
                 {
                     case "kick":
                         {
                             TShock.Utils.ForceKick(tsPlayer, string.Format("Swear count exceeds {0}",
-                                bot_Config.swear_Block_Chances), false, true);
+                                botConfig.swear_Block_Chances), false, true);
                             break;
                         }
                     case "mute":
                         {
                             tsPlayer.mute = true;
                             tsPlayer.SendWarningMessage("You have been muted for: Swear count exceeds {0}",
-                                bot_Config.swear_Block_Chances);
+                                botConfig.swear_Block_Chances);
                             
                             break;
                         }
                     case "ban":
                         {
                             TShock.Utils.Ban(tsPlayer, string.Format("Swear count exceeds {0}",
-                                bot_Config.swear_Block_Chances), true, Bot.Name);
+                                botConfig.swear_Block_Chances), true, Bot.Name);
                             break;
                         }
                 }
@@ -327,18 +325,10 @@ namespace ServerBot
         {
             bTools.Handler.RegisterCommand("help", BuiltinBotCommands.BotHelp);
             bTools.Handler.RegisterCommand("kill", BuiltinBotCommands.BotKill);
-            bTools.Handler.RegisterCommand("hi", BuiltinBotCommands.BotGreet);
-            bTools.Handler.RegisterCommand("good", BuiltinBotCommands.BotResponseGood);
-            bTools.Handler.RegisterCommand("bad", BuiltinBotCommands.BotResponseBad);
-            bTools.Handler.RegisterCommand("hug", BuiltinBotCommands.BotHug);
             bTools.Handler.RegisterCommand("ban", BuiltinBotCommands.BotBan);
             bTools.Handler.RegisterCommand("kick", BuiltinBotCommands.BotKick);
             bTools.Handler.RegisterCommand("mute", BuiltinBotCommands.BotMute);
-            bTools.Handler.RegisterCommand("unmute", BuiltinBotCommands.BotUnmute);
             bTools.Handler.RegisterCommand("butcher", BuiltinBotCommands.BotButcher);
-            //BotMain.Handler.RegisterCommand(new List<string>(){"How are you?", "how are you?", "how are you"}, BuiltinBotCommands.BotHowAreYou);
-            bTools.Handler.RegisterCommand("insult", BuiltinBotCommands.BotInsult);
-            //BotMain.Handler.RegisterCommand(new List<string>(){"g", "google"}, BuiltinBotCommands.BotWebsite);
             bTools.Handler.RegisterCommand("starttrivia", BuiltinBotCommands.BotTriviaStart);
             bTools.Handler.RegisterCommand("answer", BuiltinBotCommands.BotTriviaAnswer);
             bTools.Handler.RegisterCommand("badwords", BuiltinBotCommands.BotBadWords);

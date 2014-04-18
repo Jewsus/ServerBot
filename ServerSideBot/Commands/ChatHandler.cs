@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using TShockAPI;
 
 namespace ServerSideBot.Commands
 {
@@ -26,14 +27,34 @@ namespace ServerSideBot.Commands
 
             var args = new _CommandArgs(name, parms, SSBot.Bot, player) {_private = _private};
             var cmd = Commands.FirstOrDefault(c => c.Names.Contains(name));
-            
+
             if (cmd == null)
+            {
+                SSBot.Bot.PrivateSay("Invalid command", player.TSPlayer);
                 return false;
+            }
 
             var hasPermission = cmd.Permissions.Any(s => player.TSPlayer.Group.HasPermission(s));
             if (!hasPermission)
-                return false;
+            {
+                SSBot.Bot.PrivateSay("Invalid permission level", player.TSPlayer);
 
+                TShock.Utils.SendLogs(string.Format("{0} tried to execute: {1}{2}.",
+                    player.name,
+                    _private
+                        ? SSBot.Config.PrivateCharacter
+                        : SSBot.Config.CommandCharacter, name),
+                    Color.PaleVioletRed, player.TSPlayer);
+                return false;
+            }
+
+
+            TShock.Utils.SendLogs(string.Format("{0} executed: {1}{2}.",
+                    player.name,
+                    _private
+                        ? SSBot.Config.PrivateCharacter
+                        : SSBot.Config.CommandCharacter, name + " " + string.Join(" ", parms)),
+                    Color.PaleVioletRed, args.Player.TSPlayer);
             cmd.Delegate(args);
             return true;
         }
