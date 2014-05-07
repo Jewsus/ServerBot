@@ -21,9 +21,12 @@ namespace ServerSideBot
             {
                 var b = new Byte[3];
                 var rgb = chatColor.Split(',');
-                b[0] = byte.Parse(rgb[0]);
-                b[1] = byte.Parse(rgb[1]);
-                b[2] = byte.Parse(rgb[2]);
+
+                if (rgb.Length != 3) { b[0] = 255; b[1] = 255; b[2] = 255; }
+
+                b[0] = byte.TryParse(rgb[0], out b[0]) ? b[0] : (byte)255;
+                b[1] = byte.TryParse(rgb[1], out b[1]) ? b[1] : (byte)255;
+                b[2] = byte.TryParse(rgb[2], out b[2]) ? b[2] : (byte)255;
                 return new Color(b[0], b[1], b[2]);
             }
         }
@@ -60,6 +63,9 @@ namespace ServerSideBot
         /// <param name="player">Player to send text to</param>
         public void PrivateSay(string text, TSPlayer player)
         {
+            if (player == null || !player.ConnectionAlive || !player.Active)
+                return;
+
             player.SendMessage(string.Format("<From {0}> {1}", name, text), Color.MediumPurple);
         }
         /// <summary>
@@ -70,6 +76,9 @@ namespace ServerSideBot
         /// <param name="args">arguments for string.Format</param>
         public void PrivateSay(string text, TSPlayer player, params object[] args)
         {
+            if (player == null || !player.ConnectionAlive || !player.Active)
+                return;
+
             player.SendMessage(string.Format("<From {0}> {1}", name,
                 string.Format(text, args)), Color.MediumPurple);
         }

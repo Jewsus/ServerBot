@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq.Expressions;
+﻿using System;
+using System.Collections.Generic;
 using TShockAPI;
 
 namespace ServerSideBot
@@ -14,6 +14,8 @@ namespace ServerSideBot
         public List<string> ignoredPlayers = new List<string>();
         public Channel Channel { get; set; }
         public string invitedChannel = string.Empty;
+        public List<string> links = new List<string>();
+        public DateTime lastQuery;
 
         public BPlayer(string name)
         {

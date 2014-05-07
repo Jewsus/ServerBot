@@ -1,10 +1,17 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using TShockAPI;
 
 namespace ServerSideBot.Commands
 {
     public class BuiltInCommandRegistration
     {
+        private static int QueryCount = 0;
+        private static DateTime LastQuery = DateTime.Now;
+
         public static void RegisterCommands()
         {
             SSBot.chatHandler.RegisterCommand("bot.staff.admin", AdminUser, "admin");
@@ -13,12 +20,105 @@ namespace ServerSideBot.Commands
             SSBot.chatHandler.RegisterCommand("bot.find", FindUsers, "find");
             SSBot.chatHandler.RegisterCommand("bot.say", SayBot, "say");
             SSBot.chatHandler.RegisterCommand("bot.help", HelpCmd, "help");
-
-            #region Channelling Commands
-
+            SSBot.chatHandler.RegisterCommand("bot.Google", Google, "g", "google");
             SSBot.chatHandler.RegisterCommand("bot.channel", Channel, "channel", "c");
+            SSBot.chatHandler.RegisterCommand("bot.Google", Links, "link");
+        }
 
-            #endregion
+        private static bool Links(_CommandArgs args)
+        {
+            if (args.Parameters.Count < 1)
+            {
+                args.Bot.PrivateSay("Invalid usage. Try {0}link number", args.Player.TSPlayer,
+                    SSBot.Config.CommandCharacter);
+                return false;
+            }
+
+            int linkIndex;
+            if (!int.TryParse(args.Parameters[0], out linkIndex))
+            {
+                args.Bot.PrivateSay("Invalid usage. Try {0}link number", args.Player.TSPlayer,
+                    SSBot.Config.CommandCharacter);
+                return false;
+            }
+
+            if (linkIndex < 1 || linkIndex > args.Player.links.Count)
+            {
+                args.Bot.PrivateSay("Invalid usage. You don't have that many links saved", args.Player.TSPlayer,
+                    SSBot.Config.CommandCharacter);
+                return false;
+            }
+
+            args.Bot.PrivateSay("Link: {0}", args.Player.TSPlayer,
+                args.Player.links[linkIndex - 1]);
+            return true;
+        }
+
+        private static bool Google(_CommandArgs args)
+        {
+            if (args.Parameters.Count < 1)
+            {
+                args.Bot.PrivateSay("Invalid usage. Try {0}g text", args.Player.TSPlayer,
+                    SSBot.Config.CommandCharacter);
+                return false;
+            }
+
+            if (QueryCount == 100)
+            {
+                QueryCount -= (int)((DateTime.Now - LastQuery).TotalSeconds) / 3;
+                LastQuery = DateTime.Now;
+
+                if (QueryCount == 100)
+                {
+                    args.Bot.PrivateSay("Query limit reached. Please wait before trying again",
+                        args.Player.TSPlayer, SSBot.Config.CommandCharacter);
+                    return false;
+                }
+            }
+
+            if ((DateTime.Now - args.Player.lastQuery).TotalSeconds < 3)
+            {
+                args.Bot.PrivateSay("You must wait 3 seconds between each query", args.Player.TSPlayer,
+                    SSBot.Config.CommandCharacter);
+                return false;
+            }
+
+
+            QueryCount -= (int)((DateTime.Now - LastQuery).TotalSeconds ) / 3;
+            LastQuery = DateTime.Now;
+
+            var useFlags = args.Parameters[args.Parameters.Count - 1].StartsWith("+");
+
+            var flag = false;
+
+            if (useFlags)
+            {
+                flag = true;
+                args.Parameters.RemoveAt(args.Parameters.Count - 1);
+            }
+
+            var query = string.Join("+", args.Parameters);
+
+            var uri =
+                "http://www.google.com/uds/GwebSearch?context=0&callback=GwebSearch.RawCompletion&hl=en&v=1.0&q="
+                + query;
+
+            var request = (HttpWebRequest)WebRequest.Create(uri);
+            request.Method = WebRequestMethods.Http.Get;
+            request.ContentType = "application/json; charset=utf-8";
+
+            var res = request.GetResponse();
+
+            string mess;
+
+            using (var sr = new StreamReader(res.GetResponseStream()))
+                mess = sr.ReadToEnd();
+
+            res.Dispose();
+
+            ExtractResultsFromWebQuery(mess, args.Player, args._private, flag);
+
+            return true;
         }
 
         #region Channelling Commands
@@ -633,5 +733,181 @@ namespace ServerSideBot.Commands
         }
 
         #endregion
+
+
+        private static void ExtractResultsFromWebQuery(string mess, BPlayer player, bool _private = false,
+            bool flag = false)
+        {
+            #region Exact match
+            if (flag)
+            {
+                var url = mess.Split(',').FirstOrDefault(s => s.Contains("unescapedUrl"));
+
+                var title = (mess.Split(',').FirstOrDefault(s => s.Contains("titleNoFormatting")));
+                var content = (mess.Split(',').FirstOrDefault(s => s.ToLower().Contains("content")));
+
+                if (title == null || content == null || url == null)
+                {
+                    SSBot.Bot.PrivateSay(
+                        "403 ERROR: Access forbidden; Query count exceeded limit. Please wait 5 minutes before trying again",
+                        player.TSPlayer);
+                    return;
+                }
+
+                QueryCount++;
+
+                url = url.Remove(0, 16);
+                if (url.EndsWith("\""))
+                    url = url.Remove(url.Length - 1, 1);
+                if (url.Contains(@"\u003d"))
+                    url = url.Replace(@"\u003d", "=");
+
+                title = title.Remove(0, 21);
+                if (title.EndsWith("\""))
+                    title = title.Remove(title.Length - 1, 1);
+
+                if (title.Contains(@"\n"))
+                    title = title.Replace(@"\n", "");
+
+                if (title.Contains(@"\u0026#39;"))
+                    title = title.Replace(@"\u0026#39;", "");
+
+                content = content.Remove(0, 11);
+
+                if (content.EndsWith("\""))
+                    content = content.Remove(content.Length - 1, 1);
+                if (content.EndsWith("}"))
+                    content = content.Remove(content.Length - 1, 1);
+
+                if (content.Contains(@"\n"))
+                    content = content.Replace(@"\n", "");
+
+                if (content.Contains(@"\u003c"))
+                    content = content.Replace(@"\u003c", "");
+                if (content.Contains(@"\u003cb"))
+                    content = content.Replace(@"\u003cb", "");
+                if (content.Contains(@"\u003e"))
+                    content = content.Replace(@"\u003e", "");
+                if (content.Contains(@"\u0026#39;"))
+                    content = content.Replace(@"\u0026#39;", "");
+
+
+                if (_private)
+                {
+                    SSBot.Bot.PrivateSay("Best match:", player.TSPlayer);
+                    SSBot.Bot.PrivateSay(title + " : " + url, player.TSPlayer);
+                    SSBot.Bot.PrivateSay(content, player.TSPlayer);
+                    if (!player.links.Contains(url))
+                        player.links.Add(url);
+
+                    SSBot.Bot.PrivateSay("Use {0}link {1} to access this again", player.TSPlayer,
+                        SSBot.Config.PrivateCharacter, player.links.IndexOf(url) + 1);
+                    return;
+                }
+
+                SSBot.Bot.Say("Best match:");
+                SSBot.Bot.Say(title + " : " + url);
+                SSBot.Bot.Say(content);
+
+                foreach (var ply in SSBot.Storage.players)
+                    if (ply.online && player.TSPlayer.ConnectionAlive && ply.TSPlayer.Active)
+                    {
+                        if (!ply.links.Contains(url))
+                            ply.links.Add(url);
+                        SSBot.Bot.PrivateSay("Use {0}link {1} to access this again", ply.TSPlayer,
+                            SSBot.Config.CommandCharacter, player.links.IndexOf(url) + 1);
+                    }
+                return;
+            }
+            #endregion
+
+            #region Loose match
+            var resUrls = new List<string>();
+            var urls = mess.Split(',').Where(s => s.Contains("unescapedUrl")).ToList();
+            foreach (var urlstr in urls)
+            {
+                var url = urlstr.Remove(0, 16);
+                if (url.Contains(@"\u003d"))
+                    url = url.Replace(@"\u003d", "=");
+
+                url = url.Remove(url.Length - 1, 1);
+                if (!resUrls.Contains(url))
+                    resUrls.Add(url);
+            }
+
+
+            var resTitles = new List<string>();
+            var titles = mess.Split(',').Where(s => s.Contains("titleNoFormatting")).ToList();
+            foreach (var titlestr in titles)
+            {
+                var title = titlestr.Remove(0, 21);
+                if (title.EndsWith("\""))
+                    title = title.Remove(title.Length - 1, 1);
+
+                if (title.Contains(@"\n"))
+                    title = title.Replace(@"\n", "");
+
+                if (title.Contains(@"\u0026#39;"))
+                    title = title.Replace(@"\u0026#39;", "");
+
+                if (!resTitles.Contains(title))
+                    resTitles.Add(title);
+            }
+
+            if (resTitles.Count < 1 || resUrls.Count < 1)
+            {
+                SSBot.Bot.PrivateSay("Search operation encountered an error (no matches)", player.TSPlayer);
+                return;
+            }
+
+            if (_private)
+                SSBot.Bot.PrivateSay("Best matches:", player.TSPlayer);
+            else
+                SSBot.Bot.Say("Best matches:");
+
+            for (var i = 0; i < resUrls.Count; i++)
+            {
+                if (resTitles[i] == null || resUrls[i] == null)
+                    continue;
+                if (_private)
+                {
+                    SSBot.Bot.PrivateSay(resTitles[i] + " : " + resUrls[i], player.TSPlayer);
+                    if (!player.links.Contains(resUrls[i]))
+                        player.links.Add(resUrls[i]);
+                }
+
+                else
+                {
+                    SSBot.Bot.Say(resTitles[i] + " : " + resUrls[i]);
+
+                    foreach (var ply in SSBot.Storage.players)
+                        if (ply.online && player.TSPlayer.ConnectionAlive && ply.TSPlayer.Active)
+                        {
+                            if (!ply.links.Contains(resUrls[i]))
+                                ply.links.Add(resUrls[i]);
+                        }
+                }
+            }
+
+            if (_private)
+            {
+                SSBot.Bot.PrivateSay("You can access any of these links with {0}link {1}", player.TSPlayer,
+                    SSBot.Config.PrivateCharacter,
+                    (player.links.IndexOf(resUrls[0]) + 1) + "-" +
+                    (player.links.IndexOf(resUrls[resUrls.Count - 1]) + 1));
+            }
+            else
+            {
+                foreach (var ply in SSBot.Storage.players)
+                    if (ply.online && player.TSPlayer.ConnectionAlive && ply.TSPlayer.Active)
+                    {
+                        SSBot.Bot.PrivateSay("You can access any of these links with {0}link {1}",
+                            ply.TSPlayer, SSBot.Config.CommandCharacter,
+                            (ply.links.IndexOf(resUrls[0]) + 1) + "-" +
+                            (ply.links.IndexOf(resUrls[resUrls.Count - 1]) + 1));
+                    }
+            }
+            #endregion
+        }
     }
 }
