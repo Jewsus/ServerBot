@@ -81,10 +81,13 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="BotUser.cs" />
-    <Compile Include="Commands\BuiltInCommandRegistration.cs" />
+    <Compile Include="Commands\BuiltInCommands.cs" />
     <Compile Include="Commands\ChatHandler.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Extensions\TSPlayerExtensions.cs" />
+    <Compile Include="Packets\PlayerActiveMsg.cs" />
+    <Compile Include="Packets\PlayerInfoMsg.cs" />
+    <Compile Include="Packets\PlayerUpdateMsg.cs" />
     <Compile Include="SSBot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

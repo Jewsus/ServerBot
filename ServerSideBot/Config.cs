@@ -8,7 +8,7 @@ namespace ServerSideBot
         public char CommandCharacter = '@';
         public char PrivateCharacter = '~';
         public string BotName = "Bot";
-        public string BotChatColor = "255,255,255";
+	    public int[] BotChatColor = {255, 255, 255};
 		
         public void Write(string path)
         {
