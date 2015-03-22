@@ -5,12 +5,11 @@ namespace ServerSideBot
 {
     public class Config
     {
-        public char CommandCharacter = '.';
+        public char CommandCharacter = '@';
         public char PrivateCharacter = '~';
         public string BotName = "Bot";
         public string BotChatColor = "255,255,255";
-
-
+		
         public void Write(string path)
         {
             File.WriteAllText(path, JsonConvert.SerializeObject(this, Formatting.Indented));
