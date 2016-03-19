@@ -1,11 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Terraria;
-using Hooks;
-using TShockAPI;
-
 namespace Bot
 {
     public class Bot
