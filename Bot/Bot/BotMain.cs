@@ -1,25 +1,20 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Reflection;
-using System.Threading;
 using System.Linq;
-using System.Text;
 using System.Data;
 using System.Net;
 using System.IO;
 using System;
 using MySql.Data.MySqlClient;
 using Mono.Data.Sqlite;
-using MySql.Web;
 using TShockAPI.DB;
 using TShockAPI;
 using Terraria;
-using Hooks;
-
+using TerrariaApi.Server;
 
 namespace Bot
 {
-    [APIVersion(1, 12)]
+    [ApiVersion(1, 22)]
     public class BotMain : TerrariaPlugin
     {
         public BotConfig bcfg { get; set; }
@@ -126,7 +121,7 @@ namespace Bot
                 }
                 catch (MySqlException ex)
                 {
-                    Log.Error(ex.ToString());
+                    TShock.Log.Error(ex.ToString());
                     throw new Exception("MySql not setup correctly");
                 }
             }
@@ -145,12 +140,12 @@ namespace Bot
                                                  ? (IQueryBuilder)new SqliteQueryCreator()
                                                  : new MysqlQueryCreator());
             
-            SQLcreator.EnsureExists(table);
+            SQLcreator.EnsureTableStructure(table);
 
             var table2 = new SqlTable("BotSwear",
                 new SqlColumn("SwearBlock", MySqlDbType.Text)
                 );
-            SQLcreator.EnsureExists(table2);
+            SQLcreator.EnsureTableStructure(table2);
         }
         #endregion
 
@@ -170,8 +165,8 @@ namespace Bot
             }
             catch (Exception z)
             {
-                Log.Error("Error in BotConfig.json");
-                Log.Info(z.ToString());
+                TShock.Log.Error("Error in BotConfig.json");
+                TShock.Log.Info(z.ToString());
             }
         }
         #endregion
@@ -262,13 +257,13 @@ namespace Bot
                 Random f = new Random();
                 int p = f.Next(0, 5);
                 if (p == 0)
-                { ply.SendMessage(string.Format("{0}: Hi {1}, welcome to {2}!", bcfg.OnjoinBot.ToString(), ply.Name, TShock.Config.ServerNickname), RBC); }
+                { ply.SendMessage(string.Format("{0}: Hi {1}, welcome to {2}!", bcfg.OnjoinBot.ToString(), ply.Name, TShock.Config.ServerName), RBC); }
                 if (p == 1)
                 { ply.SendMessage(string.Format("{0}: Welcome to the land of amaaaaziiiiinnnng, {1}", bcfg.OnjoinBot.ToString(), ply.Name), RBC); }
                 if (p == 2)
                 { ply.SendMessage(string.Format("{0}: Hallo there, {1}", bcfg.OnjoinBot.ToString(), ply.Name), RBC); }
                 if (p == 3)
-                { ply.SendMessage(string.Format("{0}: Well hello there, {1}, I'm {0}, and this is {2}!", bcfg.OnjoinBot.ToString(), ply.Name, TShock.Config.ServerNickname), RBC); }
+                { ply.SendMessage(string.Format("{0}: Well hello there, {1}, I'm {0}, and this is {2}!", bcfg.OnjoinBot.ToString(), ply.Name, TShock.Config.ServerName), RBC); }
                 if (p == 4)
                 { ply.SendMessage(string.Format("{0}: Hi there {1}! I hope you enjoy your stay", bcfg.OnjoinBot.ToString(), ply.Name), RBC); }
             }
@@ -286,7 +281,7 @@ namespace Bot
         #endregion
 
         #region Bot.OnChatCmds
-        public void OnChat(messageBuffer msg, int who, string text, HandledEventArgs e)
+        public void OnChat(MessageBuffer msg, int who, string text, HandledEventArgs e)
         {
             TSPlayer pl = TShock.Players[msg.whoAmI];
 
@@ -427,7 +422,7 @@ namespace Bot
                             Console.ForegroundColor = ConsoleColor.Cyan;
                             Console.WriteLine(string.Format("{0} used {1} to execute: {2}", pl.Name, bcfg.CommandBot, words[1]));
                             Console.ResetColor();
-                            Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
+                            TShock.Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
                         }
                         if (words[1] == "help-" && words[2] == "register")
                         {
@@ -438,7 +433,7 @@ namespace Bot
                             Console.ForegroundColor = ConsoleColor.Cyan;
                             Console.WriteLine(string.Format("{0} used {1} to execute: {2} {3}", pl.Name, bcfg.CommandBot, words[1], words[2]));
                             Console.ResetColor();
-                            Log.Info(string.Format("{0} used {1} to execute: {2} {3}", pl.Name, bcfg.CommandBot, words[1], words[2]));
+                            TShock.Log.Info(string.Format("{0} used {1} to execute: {2} {3}", pl.Name, bcfg.CommandBot, words[1], words[2]));
                         }
                         if (words[1] == "help-" && words[2] == "item")
                         {
@@ -449,7 +444,7 @@ namespace Bot
                             Console.ForegroundColor = ConsoleColor.Cyan;
                             Console.WriteLine(string.Format("{0} used {1} to execute: {2} {3}", pl.Name, bcfg.CommandBot, words[1], words[2]));
                             Console.ResetColor();
-                            Log.Info(string.Format("{0} used {1} to execute: {2} {3}", pl.Name, bcfg.CommandBot, words[1], words[2]));
+                            TShock.Log.Info(string.Format("{0} used {1} to execute: {2} {3}", pl.Name, bcfg.CommandBot, words[1], words[2]));
                         }
                         #endregion
 
@@ -466,12 +461,12 @@ namespace Bot
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 Console.WriteLine(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                                 Console.ResetColor();
-                                Log.Info(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                             }
                             else
                             {
                                 pl.SendMessage(string.Format("{0}: Sorry {1}, but you don't have permission to use kill", bcfg.CommandBot, pl.Name), b.msgcol);
-                                Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
+                                TShock.Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
                             }
                         }
                         #endregion
@@ -484,7 +479,7 @@ namespace Bot
                             Console.ForegroundColor = ConsoleColor.Cyan;
                             Console.WriteLine(string.Format("{0} used {1} to execute: {2}", pl.Name, bcfg.CommandBot, words[1]));
                             Console.ResetColor();
-                            Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
+                            TShock.Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
                         }
                         #endregion
 
@@ -507,7 +502,7 @@ namespace Bot
                                 { TSPlayer.All.SendMessage(string.Format("{0}: Good, you say? Did you bring me a present then?", bcfg.CommandBot), b.msgcol); }
                                 if (q == 5)
                                 { TSPlayer.All.SendMessage(string.Format("{0}: I'm always happiest with good friends... And lots of alcohol. Want to join me?", bcfg.CommandBot), b.msgcol); }
-                                Log.Info(string.Format("{0} used {1} to execute: {2}", pl.Name, bcfg.CommandBot, words[1]));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute: {2}", pl.Name, bcfg.CommandBot, words[1]));
                             }
                         }
                         else if ((words[1] == "bad") || (words[1] == "Bad"))
@@ -539,7 +534,7 @@ namespace Bot
                                 { TSPlayer.All.SendMessage(string.Format("{1}: {0}, What you need is a good sleep... And a monkey", pl.Name, bcfg.CommandBot), b.msgcol); }
                                 if (cf == 4)
                                 { TSPlayer.All.SendMessage(string.Format("{1}: Feeling down eh? What you need is a cat.", pl.Name, bcfg.CommandBot), b.msgcol); }
-                                Log.Info(string.Format("{0} used {1} to execute: {2}", pl.Name, bcfg.CommandBot, words[1]));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute: {2}", pl.Name, bcfg.CommandBot, words[1]));
                             }
                         }
                         #endregion
@@ -560,7 +555,7 @@ namespace Bot
                             Console.ForegroundColor = ConsoleColor.Cyan;
                             Console.WriteLine(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                             Console.ResetColor();
-                            Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
+                            TShock.Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                         }
                         #endregion
 
@@ -572,7 +567,7 @@ namespace Bot
                             Console.ForegroundColor = ConsoleColor.Cyan;
                             Console.WriteLine(string.Format("{0} used {1} to execute: {2}", pl.Name, bcfg.CommandBot, words[1]));
                             Console.ResetColor();
-                            Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
+                            TShock.Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
                         }
                         #endregion
 
@@ -587,12 +582,12 @@ namespace Bot
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 Console.WriteLine(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                                 Console.ResetColor();
-                                Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                             }
                             else
                             {
                                 pl.SendMessage(string.Format("{1}: Sorry {0}, but you don't have permission to use ban.", pl.Name, bcfg.CommandBot), b.msgcol);
-                                Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
+                                TShock.Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
                             }
                         }
                         if (words[1] == "kick")
@@ -605,12 +600,12 @@ namespace Bot
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 Console.WriteLine(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                                 Console.ResetColor();
-                                Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                             }
                             else
                             {
                                 pl.SendMessage(string.Format("{1}: Sorry {0}, but you don't have permission to use kick.", pl.Name, bcfg.CommandBot), b.msgcol);
-                                Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
+                                TShock.Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
                             }
                         }
                         if (words[1] == "mute")
@@ -624,12 +619,12 @@ namespace Bot
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 Console.WriteLine(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                                 Console.ResetColor();
-                                Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                             }
                             else
                             {
                                 pl.SendMessage(string.Format("{1}: Sorry {0}, but you don't have permission to use mute.", pl.Name, bcfg.CommandBot), b.msgcol);
-                                Log.Info(string.Format("{0} failed to used {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
+                                TShock.Log.Info(string.Format("{0} failed to used {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
                             }
                         }
                         if (words[1] == "unmute")
@@ -643,7 +638,7 @@ namespace Bot
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 Console.WriteLine(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                                 Console.ResetColor();
-                                Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                             }
                         }
                         #endregion
@@ -659,12 +654,12 @@ namespace Bot
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 Console.WriteLine(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                                 Console.ResetColor();
-                                Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                             }
                             else
                             {
                                 pl.SendMessage(string.Format("{1}: Sorry {0}, but you don't have permission to use super kick.", pl.Name, bcfg.CommandBot), b.msgcol);
-                                Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
+                                TShock.Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
                             }
                         }
                         if (words[1] == "sban")
@@ -677,12 +672,12 @@ namespace Bot
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 Console.WriteLine(string.Format("{0} used {1} to execute: {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                                 Console.ResetColor();
-                                Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute {2} on {3}", pl.Name, bcfg.CommandBot, words[1], plr.Name));
                             }
                             else
                             {
                                 pl.SendMessage(string.Format("{1}: Sorry {0}, but you don't have permission to use super ban.", pl.Name, bcfg.CommandBot), b.msgcol);
-                                Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
+                                TShock.Log.Info(string.Format("{0} failed to use {1} on {2} because of lack of permissions.", pl.Name, words[1], words[2]));
                             }
                         }
                         #endregion
@@ -697,7 +692,7 @@ namespace Bot
                             Console.ForegroundColor = ConsoleColor.Cyan;
                             Console.WriteLine(string.Format("{0} used {1} to execute: {2}", pl.Name, bcfg.CommandBot, words[1]));
                             Console.ResetColor();
-                            Log.Info(string.Format("{0} used {1}'s command sender to check {1}'s commands.", pl.Name, bcfg.CommandBot));
+                            TShock.Log.Info(string.Format("{0} used {1}'s command sender to check {1}'s commands.", pl.Name, bcfg.CommandBot));
                         }
                         #endregion
 
@@ -716,7 +711,7 @@ namespace Bot
                                     Console.ForegroundColor = ConsoleColor.Cyan;
                                     Console.WriteLine(string.Format("{0} used {1} to execute: {2}.", pl.Name, bcfg.CommandBot, words[1]));
                                     Console.ResetColor();
-                                    Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
+                                    TShock.Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
                                 }
                                 else
                                 {
@@ -730,7 +725,7 @@ namespace Bot
                                 Console.ForegroundColor = ConsoleColor.Cyan;
                                 Console.WriteLine(string.Format("{0} used {1} to execute: {2}.", pl.Name, bcfg.CommandBot, words[1]));
                                 Console.ResetColor();
-                                Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
+                                TShock.Log.Info(string.Format("{0} used {1} to execute {2}", pl.Name, bcfg.CommandBot, words[1]));
                             }
                         }
                         #endregion
@@ -994,7 +989,7 @@ namespace Bot
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine(string.Format("Bot '{0}' was summoned by {1}", name, plyname));
                 Console.ResetColor();
-                Log.Warn(string.Format("{0} made bot '{1}' join", plyname, name));
+                TShock.Log.Warn(string.Format("{0} made bot '{1}' join", plyname, name));
             }
             else if (z.Parameters[0] == "leave")
             {
